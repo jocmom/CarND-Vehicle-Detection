@@ -17,7 +17,7 @@ print("Number of non-car files: ", len(notcar_files))
 
 # Reduce the sample size because
 # The quiz evaluator times out after 13s of CPU time
-sample_size = 10
+sample_size = 4000
 cars = car_files[0:sample_size]
 notcars = notcar_files[0:sample_size]
 
