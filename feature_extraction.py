@@ -1,8 +1,11 @@
 import matplotlib.image as mpimg
+import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 from skimage.feature import hog
 import scipy.ndimage as snd
+from scipy.ndimage.measurements import label
+
 # Define a function to return HOG features and visualization
 def get_hog_features(img, orient, pix_per_cell, cell_per_block, vis=False, feature_vec=True):
     """
@@ -124,11 +127,11 @@ def single_img_features(img, color_space='RGB', spatial_size=(32, 32),
         if hog_channel == 'ALL':
             hog_features = []
             for channel in range(feature_image.shape[2]):
-                hog_features.extend(get_hog_features(feature_image[:,:,channel],
-                                    orient, pix_per_cell, cell_per_block, 
+                hog_features.extend(get_hog_features(feature_image[:, :, channel], \
+                                    orient, pix_per_cell, cell_per_block, \
                                     vis=False, feature_vec=True))
         else:
-            hog_features = get_hog_features(feature_image[:,:,hog_channel], orient,
+            hog_features = get_hog_features(feature_image[:, :, hog_channel], orient, \
                         pix_per_cell, cell_per_block, vis=False, feature_vec=True)
         #8) Append features to list
         img_features.append(hog_features)
@@ -225,9 +228,12 @@ def search_windows(img, windows, clf, scaler, color_space='RGB',
         if prediction == 1:
             on_windows.append(window)
     #8) Return windows for positive detections
+    print(test_features.shape)
+    plt.plot(test_features[0])
+    plt.show()
     return on_windows
 
-def convert_color(img, color_space='RGB2YCrCb'):
+def convert_color(img, color_space='YCrCb'):
     if color_space == 'HSV':
         return cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
     if color_space == 'LUV':
@@ -242,7 +248,7 @@ def convert_color(img, color_space='RGB2YCrCb'):
 # Define a single function that can extract features using hog sub-sampling and make predictions
 def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins):
     draw_img = np.copy(img)
-    img = img.astype(np.float32)/255
+    #img = img.astype(np.float32)/255
     img_tosearch = img[ystart:ystop, :, :]
     ctrans_tosearch = convert_color(img_tosearch, color_space='YCrCb')
     if scale != 1:
@@ -269,6 +275,7 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
     hog2 = get_hog_features(ch2, orient, pix_per_cell, cell_per_block, feature_vec=False)
     hog3 = get_hog_features(ch3, orient, pix_per_cell, cell_per_block, feature_vec=False)
 
+    windows = []
     for xb in range(nxsteps):
         for yb in range(nysteps):
             ypos = yb*cells_per_step
@@ -284,19 +291,20 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
 
             # Extract the image patch
             subimg = cv2.resize(ctrans_tosearch[ytop:ytop+window, xleft:xleft+window], (64, 64))
-
             # Get color features
             spatial_features = bin_spatial(subimg, size=spatial_size)
             hist_features = color_hist(subimg, nbins=hist_bins)
 
             # Scale features and make a prediction
             test_features = X_scaler.transform(np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1))
-            #test_features = X_scaler.transform(np.hstack((shape_feat, hist_feat)).reshape(1, -1))
             test_prediction = svc.predict(test_features)
 
             if test_prediction == 1:
                 xbox_left = np.int(xleft*scale)
                 ytop_draw = np.int(ytop*scale)
                 win_draw = np.int(window*scale)
-                cv2.rectangle(draw_img, (xbox_left, ytop_draw+ystart), (xbox_left+win_draw, ytop_draw+win_draw+ystart), (0, 0, 255), 6)
-    return draw_img
+                windows.append([(xbox_left, ytop_draw+ystart), (xbox_left+win_draw, ytop_draw+win_draw+ystart)])
+                cv2.rectangle(draw_img,(xbox_left, ytop_draw+ystart),(xbox_left+win_draw,ytop_draw+win_draw+ystart),(0,0,255),6)
+
+    return draw_img, windows
+
