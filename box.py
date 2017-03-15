@@ -17,6 +17,9 @@ class Box():
         self.final = self.find_final_boxes()
 
     def add_heat(self):
+        """
+        Add heat (+1) for all pixels within all hot boxes
+        """
         heat = np.zeros_like(self.image[:, :, 0]).astype(np.float)
         # Iterate through list of bboxes
         for box in self.hot:
@@ -26,12 +29,18 @@ class Box():
         return heat
 
     def apply_threshold(self, heat):
+        """
+        Only enable heat boxes above threshold
+        """
         # Zero out pixels below the threshold
         heat[heat <= self.threshold] = 0
         # Return thresholded map
         return heat
 
     def find_heatmap(self):
+        """
+        Find heatmap image
+        """
         # Add heat to each box in box list
         heat = self.add_heat()
         # Apply threshold to help remove false positives
@@ -40,6 +49,9 @@ class Box():
         return np.clip(heat, 0, 255)
 
     def find_final_boxes(self):
+        """
+        Use scipy label function and heatmap to identify objects
+        """
         final_boxes = []
         for l in range(1, self.labels[1]+1):
             # Find pixels with each car_number label value
@@ -52,6 +64,9 @@ class Box():
         return final_boxes
 
     def draw_final(self, img):
+        """
+        Draw rectangles around found objects
+        """
         draw_img = np.copy(img)
         for bbox in self.final:
             cv2.rectangle(draw_img, bbox[0], bbox[1], (0, 0, 255), 6)
