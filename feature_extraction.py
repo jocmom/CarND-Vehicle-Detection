@@ -298,8 +298,14 @@ def find_cars(img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, ce
             # Scale features and make a prediction
             test_features = X_scaler.transform(np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1))
             test_prediction = svc.predict(test_features)
+            test_func = svc.decision_function(test_features)
 
-            if test_prediction == 1:
+            if test_prediction == 1 and test_func > 0.7:
+                # test_proba = svc.predict_proba(test_features)
+                # test_log_proba = svc.predict_log_proba(test_features)
+                # print("Prediction function value: ", test_func)
+                # print("Prediction probability: ", test_proba)
+                # print("Prediction log probability: ", test_log_proba)
                 xbox_left = np.int(xleft*scale)
                 ytop_draw = np.int(ytop*scale)
                 win_draw = np.int(window*scale)

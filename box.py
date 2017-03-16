@@ -65,10 +65,20 @@ class Box():
 
     def draw_final(self, img):
         """
-        Draw rectangles around found objects
+        Draw final rectangles around found objects
         """
         draw_img = np.copy(img)
         for bbox in self.final:
             cv2.rectangle(draw_img, bbox[0], bbox[1], (0, 0, 255), 6)
+        # Return the image
+        return draw_img
+
+    def draw_hot(self, img):
+        """
+        Draw hot boxes rectangles around found objects
+        """
+        draw_img = np.copy(img)
+        for bbox in self.hot:
+            cv2.rectangle(draw_img, bbox[0], bbox[1], (255, 0, 0), 2)
         # Return the image
         return draw_img
