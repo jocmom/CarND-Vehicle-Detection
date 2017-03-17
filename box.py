@@ -1,20 +1,34 @@
 import cv2
 import numpy as np
+from collections import deque
 from scipy.ndimage.measurements import label
 
 class Box():
     """
     """
-    def __init__(self, image, hot_boxes, threshold=1):
+    def __init__(self, image, threshold=1, queue_len=5):
         self.image = image
-        self.hot = hot_boxes
+        self.current_boxes = []
         self.threshold = threshold
+        self.current_heatmap = []
+        self.avg_heatmap = []
+        self.heatmap_queue = deque(maxlen=queue_len)
+        self.labels = None
+        self.final_boxes = []
+
+    def add_boxes(self, boxes):
+        """
+        Add all hot boxes (e.g. found cars)
+        """
+        self.current_boxes = boxes
         # find heatmap
-        self.heatmap = self.find_heatmap()
+        self.current_heatmap = self.find_heatmap()
+        self.heatmap_queue.append(self.current_heatmap)
+        self.avg_heatmap = np.mean(self.heatmap_queue, axis=0)
         # get labels out of heatmap
-        self.labels = label(self.heatmap)
+        self.labels = label(self.current_heatmap)
         # get final boxes out of labels
-        self.final = self.find_final_boxes()
+        self.final_boxes = self.find_final_boxes()
 
     def add_heat(self):
         """
@@ -22,7 +36,7 @@ class Box():
         """
         heat = np.zeros_like(self.image[:, :, 0]).astype(np.float)
         # Iterate through list of bboxes
-        for box in self.hot:
+        for box in self.current_boxes:
             # Add += 1 for all pixels inside each bbox
             # Assuming each "box" takes the form ((x1, y1), (x2, y2))
             heat[box[0][1]:box[1][1], box[0][0]:box[1][0]] += 1
@@ -44,7 +58,7 @@ class Box():
         # Add heat to each box in box list
         heat = self.add_heat()
         # Apply threshold to help remove false positives
-        heat = self.apply_threshold(heat)
+        #heat = self.apply_threshold(heat)
         # Visualize the heatmap when displaying
         return np.clip(heat, 0, 255)
 
@@ -68,7 +82,7 @@ class Box():
         Draw final rectangles around found objects
         """
         draw_img = np.copy(img)
-        for bbox in self.final:
+        for bbox in self.final_boxes:
             cv2.rectangle(draw_img, bbox[0], bbox[1], (0, 0, 255), 6)
         # Return the image
         return draw_img
@@ -78,7 +92,7 @@ class Box():
         Draw hot boxes rectangles around found objects
         """
         draw_img = np.copy(img)
-        for bbox in self.hot:
+        for bbox in self.current_boxes:
             cv2.rectangle(draw_img, bbox[0], bbox[1], (255, 0, 0), 2)
         # Return the image
         return draw_img

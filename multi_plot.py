@@ -3,7 +3,7 @@ import itertools
 import matplotlib.pyplot as plt
 
 # plotting helper functions
-def plot_images(images, label=None, n_cols=5, cmap=None):
+def plot_images(images, label=None, n_cols=5, cmap=None, savefig=None):
     """
     plot images in n_cols columns
     :param images
@@ -19,16 +19,17 @@ def plot_images(images, label=None, n_cols=5, cmap=None):
         if label != None:
             plt.title("Output " + str(label[i]))
         plt.imshow(image, aspect='equal', cmap=cmap)
-    #plt.savefig(output_folder + "pipeline")
+    if savefig != None:
+        plt.savefig(savefig)
     plt.show()
 
-def plot_compare_images(left_images, right_images, cmap=None):
+def plot_compare_images(left_images, right_images, cmap=None, savefig=None):
     """
     compare two image list side by side
     """
     assert len(left_images) == len(right_images)
     mixed_images = list(itertools.chain.from_iterable(zip(left_images, right_images)))
-    plot_images(mixed_images, n_cols=2, cmap=cmap)
+    plot_images(mixed_images, n_cols=2, cmap=cmap, savefig=savefig)
 
 def plot_histogram(labels, n_labels):
     """
