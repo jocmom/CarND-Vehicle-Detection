@@ -25,8 +25,11 @@ class Box():
         self.current_heatmap = self.find_heatmap()
         self.heatmap_queue.append(self.current_heatmap)
         self.avg_heatmap = np.mean(self.heatmap_queue, axis=0)
+        # Apply threshold to help remove false positives
+        self.avg_heatmap = self.apply_threshold(self.avg_heatmap)
         # get labels out of heatmap
-        self.labels = label(self.current_heatmap)
+        #self.labels = label(self.current_heatmap)
+        self.labels = label(self.avg_heatmap)
         # get final boxes out of labels
         self.final_boxes = self.find_final_boxes()
 
